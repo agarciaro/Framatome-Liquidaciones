@@ -9,6 +9,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.framatome.liquidaciones.model.UserData;
@@ -20,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ExcelProcessorService {
 	
 	@Value("${excel.file.path}")
-	String excelFilePath;
+	Resource resource;
 	
 	@Value("${excel.column.userId}")
 	int userIdColumn;
@@ -38,8 +39,8 @@ public class ExcelProcessorService {
 
 	public void loadExcel() {
 		try {
-			log.info("Cargando archivo Excel: {}", excelFilePath);
-			fis = new FileInputStream(excelFilePath);
+			log.info("Cargando archivo Excel: {}", resource.getFile().getAbsolutePath());
+			fis = new FileInputStream(resource.getFile());
 			workbook = new XSSFWorkbook(fis);
 			sheet = workbook.getSheetAt(0);
 			rowIterator = sheet.iterator();

@@ -37,9 +37,9 @@ public class LiquidacionesApplication {
 	
 	public void procesarUsuarios() {
 		try {
-			webDriverService.init();
-			webDriverService.goHome();
-			webDriverService.login();
+//			webDriverService.init();
+//			webDriverService.goHome();
+//			webDriverService.login();
 			excelProcessorService.loadExcel();
 			UserData userData;
 			do {
