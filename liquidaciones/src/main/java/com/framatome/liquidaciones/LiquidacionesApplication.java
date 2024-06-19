@@ -37,17 +37,18 @@ public class LiquidacionesApplication {
 	
 	public void procesarUsuarios() {
 		try {
-//			webDriverService.init();
-//			webDriverService.goHome();
+			webDriverService.init();
+			webDriverService.goHome();
 //			webDriverService.login();
-			excelProcessorService.loadExcel();
-			UserData userData;
-			do {
-				userData = excelProcessorService.getNextUser();
-				log.info("Usuario: {}", userData);
-			} while (userData != null);
-			
-			excelProcessorService.closeExcel();
+			webDriverService.downloadFiles();
+//			excelProcessorService.loadExcel();
+//			UserData userData;
+//			do {
+//				userData = excelProcessorService.getNextUser();
+//				log.info("Usuario: {}", userData);
+//			} while (userData != null);
+//			
+//			excelProcessorService.closeExcel();
 		} catch (Exception e) {
 			log.error("Error en el proceso: {}", e.getMessage());
 		} finally {
