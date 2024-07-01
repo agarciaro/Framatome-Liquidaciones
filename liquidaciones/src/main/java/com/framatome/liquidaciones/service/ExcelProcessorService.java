@@ -1,9 +1,13 @@
 package com.framatome.liquidaciones.service;
 
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Iterator;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -19,23 +23,34 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class ExcelProcessorService {
-	
+
+	static String[] HEADERS = { "id", "nombre", "apellidos", "carpeta", "#liquidaciones" };
+
 	@Value("${excel.file.path}")
 	Resource resource;
-	
+
+	@Value("${liquidaciones.folder}")
+	String liquidacionesFolder;
+
 	@Value("${excel.column.userId}")
 	int userIdColumn;
-	
+
 	@Value("${excel.column.userNombre}")
 	int nombreColumn;
-	
+
 	@Value("${excel.column.userApellidos}")
 	int apellidosColumn;
+
+	@Value("${excel.column.userCarpeta}")
+	int carpetaColumn;
 
 	private FileInputStream fis;
 	private Workbook workbook;
 	private Sheet sheet;
 	private Iterator<Row> rowIterator;
+
+	private CSVPrinter csvPrinter;
+	private FileWriter out;
 
 	public void loadExcel() {
 		try {
@@ -48,6 +63,21 @@ public class ExcelProcessorService {
 		} catch (IOException e) {
 			log.error("Error al cargar el archivo Excel:", e);
 		}
+	}
+
+	public void createCsv() throws IOException {
+		out = new FileWriter(liquidacionesFolder + "resultados" + System.currentTimeMillis() + ".csv");
+
+		CSVFormat csvFormat = CSVFormat.DEFAULT.builder().setHeader(HEADERS).build();
+
+		csvPrinter = new CSVPrinter(out, csvFormat);
+	}
+
+	public void writeCsvRow(UserData userData, String destLiquidacionFolder, int numLiquidaciones) throws IOException {
+		log.info("Escribiendo fila en CSV: {}", destLiquidacionFolder);
+		csvPrinter.printRecord(userData.getUserId(), userData.getNombre(), userData.getApellidos(),
+				destLiquidacionFolder, numLiquidaciones);
+		csvPrinter.flush();
 	}
 
 	public void closeExcel() {
@@ -74,13 +104,34 @@ public class ExcelProcessorService {
 			userData.setUserId(row.getCell(userIdColumn).getStringCellValue());
 			userData.setNombre(row.getCell(nombreColumn).getStringCellValue());
 			userData.setApellidos(row.getCell(apellidosColumn).getStringCellValue());
-			if(userData.getUserId() == null || userData.getUserId().isEmpty()) {
+			userData.setCarpeta(row.getCell(carpetaColumn).getStringCellValue());
+			if (userData.getUserId() == null || userData.getUserId().isEmpty()) {
 				log.warn("Row sin ID, finalizando proceso...");
 				return null;
 			}
 			return userData;
 		}
-		
+
 		return null; // Fin del archivo
+	}
+
+	public File createUserFolder(UserData userData) {
+		File userFolder = new File(liquidacionesFolder + userData.getCarpeta());
+		if (userFolder.mkdirs()) {
+			log.info("Carpeta creada: {}", userFolder.getAbsolutePath());
+		} else {
+			log.warn("Carpeta ya existe: {}", userFolder.getAbsolutePath());
+		}
+		return userFolder;
+	}
+
+	public void closeCsv() {
+		if (csvPrinter != null) {
+			try {
+				csvPrinter.close();
+			} catch (IOException e) {
+				log.error("Error al cerrar el archivo CSV:", e);
+			}
+		}
 	}
 }

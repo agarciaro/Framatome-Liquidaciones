@@ -12,5 +12,6 @@ public class UserData {
 	private String userId;
 	private String nombre;
 	private String apellidos;
+	private String carpeta;
 	
 }
