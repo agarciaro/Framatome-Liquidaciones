@@ -1,6 +1,5 @@
 package com.framatome.liquidaciones.service;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -8,12 +7,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import javax.imageio.ImageIO;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -196,9 +199,43 @@ public class WebDriverService {
 							String extension = fileName.substring(fileName.lastIndexOf("."));
 							URL imageURL = new URL(link.getAttribute("href"));
 							log.info("Imagen URL: {}", imageURL.toString());
-							//Descargar imagen
-							BufferedImage savedImage = ImageIO.read(imageURL);
-							ImageIO.write(savedImage, extension, new File(downloadFolder + fileName));
+							link.click();
+							
+							Set<String> handles = webDriver.getWindowHandles();
+							
+							if (handles.size() == 2) {
+							    Iterator<String> itr = handles.iterator(); 
+
+							    String parent_window = itr.next().toString();
+							    String child_window = itr.next().toString();
+							    System.out.println(parent_window);
+							    System.out.println(child_window);
+
+							    // switching to child window
+							    webDriver.switchTo().window(child_window);
+							    
+							  //Descargar imagen
+								File savedImage = ((TakesScreenshot)webDriver).getScreenshotAs(OutputType.FILE);
+								log.info("Snapshot {}", savedImage.getAbsolutePath());
+								
+								try {
+									Files.copy(savedImage.toPath(), new File(downloadFolder + fileName).toPath());
+								} catch (Exception e) {
+									log.error("Error al guardar imagen", e);
+                                }
+
+							    // closing child window
+							    webDriver.close();
+
+							    // switching back to parent window
+							    webDriver.switchTo().window(parent_window);
+
+							} else {
+							    log.error("New tab did not open.");
+							}
+							
+							
+							
 						} catch (Exception e) {
 							log.error("Error al descargar imagen", e);
 						}
