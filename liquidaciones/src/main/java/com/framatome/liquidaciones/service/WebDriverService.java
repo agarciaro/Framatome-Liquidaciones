@@ -1,12 +1,16 @@
 package com.framatome.liquidaciones.service;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
@@ -68,8 +72,8 @@ public class WebDriverService {
 
 		// Crear una instancia de WebDriver
 		webDriver = new ChromeDriver(options);
-		webDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
-		webDriver.manage().timeouts().scriptTimeout(Duration.ofSeconds(10));
+		webDriver.manage().timeouts().implicitlyWait(Duration.ofSeconds(8));
+		webDriver.manage().timeouts().scriptTimeout(Duration.ofSeconds(8));
 	}
 
 	public void close() {
@@ -182,15 +186,30 @@ public class WebDriverService {
 			do {
 				try {
 					link = webDriver.findElement(By.cssSelector(".cso-uploaded:nth-child(" + linkNumero + ") .cso-hyper-link"));
-//					log.info("Downloading:{}", link.getAttribute("alt"));
+					String fileName = link.getText();
+					log.info("Downloading:{}", fileName);
+					
+					boolean isImage = fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") || fileName.endsWith(".png") || fileName.endsWith(".gif") || fileName.endsWith(".bmp") || fileName.endsWith(".tiff");
 					linkNumero++;
-					link.click();
+					if (isImage) {
+						try {
+							String extension = fileName.substring(fileName.lastIndexOf("."));
+							URL imageURL = new URL(link.getAttribute("href"));
+							log.info("Imagen URL: {}", imageURL.toString());
+							//Descargar imagen
+							BufferedImage savedImage = ImageIO.read(imageURL);
+							ImageIO.write(savedImage, extension, new File(downloadFolder + fileName));
+						} catch (Exception e) {
+							log.error("Error al descargar imagen", e);
+						}
+					} else {
+						link.click();
+					}
 				} catch (Exception e) {
 					link = null;
 				}
 			} while (link != null);
 			
-//			Thread.sleep(2000);
 			WebElement hechoBtn =webDriver.findElement(By.linkText("Hecho"));
 			hechoBtn.click();
 			
